@@ -1,0 +1,31 @@
+name: Render 3D Video
+on: [push] # 当你点击 commit 提交代码时触发
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg freeglut3-dev libpango1.0-dev
+
+      - name: Install Python packages
+        run: pip install -r requirements.txt
+
+      - name: Render Video
+        run: manim -pql main.py Scene3D # ql 表示低画质快速渲染，生产环境可用 qh
+
+      - name: Upload Video Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: 3d-animation-video
+          path: media/videos/main/480p15/Scene3D.mp4
