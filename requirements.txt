@@ -1,4 +1,4 @@
-manim
+manim==0.18.0
 importlib-metadata
 numpy
 edge-tts
