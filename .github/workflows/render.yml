@@ -16,29 +16,29 @@ jobs:
       - name: Install System Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg freeglut3-dev libpango1.0-dev libcairo2-dev
+          sudo apt-get install -y ffmpeg freeglut3-dev libpango1.0-dev libcairo2-dev xvfb
 
       - name: Install Python Libraries
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install manim==0.18.0 numpy edge-tts moviepy
 
       - name: Run Manim Render
-        run: manim -ql main.py Scene3D
+        # 使用 xvfb-run 模拟显示环境，-o 直接输出到当前目录
+        run: xvfb-run manim -ql -o final_video.mp4 main.py Scene3D
 
       - name: Merge Audio and Video
         run: |
-          # 寻找生成的视频
-          VIDEO_PATH=$(find media/videos -name "*.mp4" | head -n 1)
-          if [ -f "voice.mp3" ] && [ -f "$VIDEO_PATH" ]; then
-            ffmpeg -i "$VIDEO_PATH" -i voice.mp3 -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 output_final.mp4
+          # Manim 的输出通常在 media/videos/main/480p15/final_video.mp4
+          VIDEO_FILE=$(find media/videos -name "final_video.mp4" | head -n 1)
+          if [ -f "voice.mp3" ] && [ -f "$VIDEO_FILE" ]; then
+            ffmpeg -i "$VIDEO_FILE" -i voice.mp3 -c:v libx264 -c:a aac -shortest output_final.mp4
           else
-            echo "Audio or Video missing, skipping merge."
-            cp "$VIDEO_PATH" output_final.mp4 || touch output_final.mp4
+            echo "Missing files, check logs."
+            exit 1
           fi
 
       - name: Upload Finished Video
         uses: actions/upload-artifact@v4
         with:
-          name: my-ai-3d-video
+          name: ai-3d-video-result
           path: output_final.mp4
