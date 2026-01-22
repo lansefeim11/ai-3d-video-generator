@@ -28,10 +28,14 @@ jobs:
 
       - name: Merge Audio and Video
         run: |
-          # 自动寻找生成的视频路径
+          # 寻找生成的视频
           VIDEO_PATH=$(find media/videos -name "*.mp4" | head -n 1)
-          # 使用 FFmpeg 将 voice.mp3 压入视频
-          ffmpeg -i "$VIDEO_PATH" -i voice.mp3 -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 output_final.mp4
+          if [ -f "voice.mp3" ] && [ -f "$VIDEO_PATH" ]; then
+            ffmpeg -i "$VIDEO_PATH" -i voice.mp3 -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 output_final.mp4
+          else
+            echo "Audio or Video missing, skipping merge."
+            cp "$VIDEO_PATH" output_final.mp4 || touch output_final.mp4
+          fi
 
       - name: Upload Finished Video
         uses: actions/upload-artifact@v4
