@@ -1,35 +1,40 @@
 from manim import *
+import asyncio
+import edge_tts
+from moviepy.editor import VideoFileClip, AudioFileClip
+
+# 1. 生成语音的函数
+async def generate_tts(text, output_file):
+    communicate = edge_tts.Communicate(text, "zh-CN-XiaoxiaoNeural")
+    await communicate.save(output_file)
 
 class Scene3D(ThreeDScene):
     def construct(self):
-        # 1. 设置相机视角
+        # --- 语音准备 ---
+        text = "大家好，我是由代码生成的3D小人。我可以一边走路一边说话！"
+        audio_file = "voice.mp3"
+        asyncio.run(generate_tts(text, audio_file))
+        
+        # 获取音频长度（这里简单设为 4 秒，进阶可用 moviepy 读取长度）
+        audio_duration = 4 
+
+        # --- 场景建模 ---
         self.set_camera_orientation(phi=75 * DEGREES, theta=-45 * DEGREES)
-
-        # 2. 创建 3D 几何小人 (头部和身体)
-        # 使用 Sphere 和 Cylinder 构建
-        head = Sphere(radius=0.5, color=ORANGE).shift(OUT * 1.5)
-        body = Cylinder(radius=0.4, height=2, color=BLUE)
-        
-        # 将部位组合成一个整体
+        head = Sphere(radius=0.5, color="#F472B6").shift(OUT * 1.5) # 马卡龙粉
+        body = Cylinder(radius=0.4, height=2, color="#0EA5E9")      # 天空蓝
         character = VGroup(head, body)
-
-        # 3. 创建地面
-        grid = NumberPlane()
         
-        # 4. 动画逻辑
-        self.add(grid)
+        # --- 动画流程 ---
+        self.add(NumberPlane())
         self.play(Create(character))
+        
+        # 说话时的动作：边走边跳，时长与语音同步
+        self.play(
+            character.animate.shift(RIGHT * 4),
+            rate_func=there_and_back,
+            run_time=audio_duration
+        )
         self.wait(1)
 
-        # 模拟走路：平移的同时加上缩放呼吸效果（替代报错的 wiggle）
-        self.play(
-            character.animate.shift(RIGHT * 3),
-            character.animate.scale(1.2),
-            run_time=2,
-            rate_func=there_and_back # 这是一个内置的平滑往复函数
-        )
-        
-        # 5. 视角旋转
-        self.begin_ambient_camera_rotation(rate=0.2)
-        self.play(character.animate.rotate(PI/4, axis=UP))
-        self.wait(2)
+# --- 自动缝合逻辑 ---
+# 这一步通常在 GitHub Actions 里通过命令行完成，但也可以写在 Python 里
