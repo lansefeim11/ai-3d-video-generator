@@ -1,4 +1,4 @@
-name: Render 3D Video
+name: Render AI 3D Video
 on: [push]
 
 jobs:
@@ -13,24 +13,28 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install system dependencies
+      - name: Install System Tools
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg freeglut3-dev libpango1.0-dev libcairo2-dev
 
-      - name: Install Python packages
+      - name: Install Python Libraries
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Render Video
-        # 执行渲染指令
-        run: manim -ql main.py Scene3D 
+      - name: Run Manim Render
+        run: manim -ql main.py Scene3D
 
-      - name: Upload Video Artifact
-        # 必须使用 v4 版本解决第一张图的报错
-        uses: actions/upload-artifact@v4 
+      - name: Merge Audio and Video
+        run: |
+          # 自动寻找生成的视频路径
+          VIDEO_PATH=$(find media/videos -name "*.mp4" | head -n 1)
+          # 使用 FFmpeg 将 voice.mp3 压入视频
+          ffmpeg -i "$VIDEO_PATH" -i voice.mp3 -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 output_final.mp4
+
+      - name: Upload Finished Video
+        uses: actions/upload-artifact@v4
         with:
-          name: 3d-animation-video
-          # 使用通配符路径，确保能抓取到生成的 mp4 文件
-          path: media/videos/**/*.mp4
+          name: my-ai-3d-video
+          path: output_final.mp4
