@@ -1,3 +1,5 @@
 manim
 importlib-metadata
 numpy
+edge-tts
+moviepy
