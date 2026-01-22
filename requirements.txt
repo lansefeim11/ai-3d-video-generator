@@ -1,2 +1,3 @@
 manim
+importlib-metadata
 numpy
