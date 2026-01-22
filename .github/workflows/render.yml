@@ -25,7 +25,7 @@ jobs:
         run: manim -pql main.py Scene3D # ql 表示低画质快速渲染，生产环境可用 qh
 
       - name: Upload Video Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: 3d-animation-video
           path: media/videos/main/480p15/Scene3D.mp4
