@@ -1,44 +1,30 @@
 name: Render AI 3D Video
 on: [push]
-
 jobs:
   render:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
-      - name: Install System Tools
+      - name: Install Tools
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg freeglut3-dev libpango1.0-dev libcairo2-dev xvfb
-
-      - name: Install Python Libraries
+          pip install manim==0.18.0 edge-tts
+      - name: Render
+        # 强制删除所有参数，只保留最基础的运行
+        run: xvfb-run manim -ql -o final.mp4 main.py Scene3D
+      - name: Finalize
         run: |
-          pip install manim==0.18.0 numpy edge-tts moviepy
-
-      - name: Run Manim Render
-        # 使用 xvfb-run 模拟图形环境，确保 3D 渲染不报错
-        run: xvfb-run manim -ql -o final_video.mp4 main.py Scene3D
-
-      - name: Merge Audio and Video
-        run: |
-          # 寻找生成的视频并合并音频
-          VIDEO_FILE=$(find media/videos -name "final_video.mp4" | head -n 1)
-          if [ -f "voice.mp3" ] && [ -f "$VIDEO_FILE" ]; then
-            ffmpeg -y -i "$VIDEO_FILE" -i voice.mp3 -c:v libx264 -c:a aac -shortest output_final.mp4
-          else
-            echo "Merge failed: Files not found."
-            exit 1
-          fi
-
-      - name: Upload Finished Video
+          VIDEO=$(find media/videos -name "final.mp4" | head -n 1)
+          ffmpeg -i "$VIDEO" -i voice.mp3 -c:v copy -c:a aac -shortest result.mp4
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: robot-3d-video
-          path: output_final.mp4
+          name: robot-video
+          path: result.mp4
