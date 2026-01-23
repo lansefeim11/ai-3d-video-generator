@@ -23,22 +23,22 @@ jobs:
           pip install manim==0.18.0 numpy edge-tts moviepy
 
       - name: Run Manim Render
-        # 使用 xvfb-run 模拟显示环境，-o 直接输出到当前目录
+        # 使用 xvfb-run 模拟图形环境，确保 3D 渲染不报错
         run: xvfb-run manim -ql -o final_video.mp4 main.py Scene3D
 
       - name: Merge Audio and Video
         run: |
-          # Manim 的输出通常在 media/videos/main/480p15/final_video.mp4
+          # 寻找生成的视频并合并音频
           VIDEO_FILE=$(find media/videos -name "final_video.mp4" | head -n 1)
           if [ -f "voice.mp3" ] && [ -f "$VIDEO_FILE" ]; then
-            ffmpeg -i "$VIDEO_FILE" -i voice.mp3 -c:v libx264 -c:a aac -shortest output_final.mp4
+            ffmpeg -y -i "$VIDEO_FILE" -i voice.mp3 -c:v libx264 -c:a aac -shortest output_final.mp4
           else
-            echo "Missing files, check logs."
+            echo "Merge failed: Files not found."
             exit 1
           fi
 
       - name: Upload Finished Video
         uses: actions/upload-artifact@v4
         with:
-          name: ai-3d-video-result
+          name: robot-3d-video
           path: output_final.mp4
