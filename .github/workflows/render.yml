@@ -5,26 +5,26 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: write
+      actions: write  # 必须开启此权限，否则下载链接无效
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      - name: Install Tools
+      - name: Install System Tools
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg freeglut3-dev libpango1.0-dev libcairo2-dev xvfb
           pip install manim==0.18.0 edge-tts
-      - name: Render
-        # 强制删除所有参数，只保留最基础的运行
-        run: xvfb-run manim -ql -o final.mp4 main.py Scene3D
-      - name: Finalize
+      - name: Run Render
+        # 使用 -o 强制重命名输出，方便找文件
+        run: xvfb-run manim -ql -o final_video.mp4 main.py Scene3D
+      - name: Combine Audio
         run: |
-          VIDEO=$(find media/videos -name "final.mp4" | head -n 1)
-          ffmpeg -i "$VIDEO" -i voice.mp3 -c:v copy -c:a aac -shortest result.mp4
+          VIDEO=$(find media/videos -name "final_video.mp4" | head -n 1)
+          ffmpeg -y -i "$VIDEO" -i voice.mp3 -c:v copy -c:a aac -shortest result.mp4
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: robot-video
+          name: robot-video-fixed
           path: result.mp4
