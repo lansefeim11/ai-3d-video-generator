@@ -2,46 +2,66 @@ from manim import *
 import asyncio
 import edge_tts
 
-# 语音生成
+# 语音生成函数
 async def generate_tts(text, output_file):
     communicate = edge_tts.Communicate(text, "zh-CN-XiaoxiaoNeural")
-    await asyncio.wait_for(communicate.save(output_file), timeout=10)
+    await communicate.save(output_file)
 
 class RobotScene(Scene):
     def construct(self):
-        # 1. 语音准备
-        script = "你好！既然3D世界太复杂，我决定换个2.5D的身体。你看，现在我不仅对齐了，还很帅气。"
+        # --- 1. 语音准备 ---
+        script = "你好！这是我的 2.0 进化版本。采用了霓虹渐变风格和动态阴影，是不是比之前的 3D 效果更有质感？"
         asyncio.run(generate_tts(script, "voice.mp3"))
 
-        # 2. 2.5D 机器人建模 (使用平面图形堆叠)
-        # 身体：圆角矩形
-        body = RoundedRectangle(corner_radius=0.2, height=2, width=1.5, color=BLUE, fill_opacity=0.8)
-        
-        # 头部：圆形，直接对齐到身体上方
-        head = Circle(radius=0.6, color=PINK, fill_opacity=1).next_to(body, UP, buff=0.1)
-        
-        # 眼睛：两个小点
-        eye_l = Dot(color=WHITE).move_to(head.get_center() + LEFT*0.2 + UP*0.1)
-        eye_r = Dot(color=WHITE).move_to(head.get_center() + RIGHT*0.2 + UP*0.1)
-        
-        # 天线：模拟 3D 感
-        antenna = Line(head.get_top(), head.get_top() + UP*0.5, color=WHITE)
-        tip = Dot(antenna.get_end(), color=RED)
-        
-        # 手臂：左右伸出
-        arm_l = Line(body.get_left(), body.get_left() + LEFT*0.8, stroke_width=8, color=BLUE_A)
-        arm_r = Line(body.get_right(), body.get_right() + RIGHT*0.8, stroke_width=8, color=BLUE_A)
+        # --- 2. 颜色定义 (赛博朋克风格) ---
+        color_main = [BLUE_C, PURPLE_C] # 渐变色
+        color_shadow = "#222222"        # 阴影色
 
-        robot = VGroup(body, head, eye_l, eye_r, antenna, tip, arm_l, arm_r).center()
+        # --- 3. 机器人建模 ---
+        # 身体：带渐变色的圆角矩形
+        body = RoundedRectangle(corner_radius=0.3, height=2.2, width=1.8)
+        body.set_fill(color=color_main, opacity=1)
+        body.set_stroke(WHITE, width=4)
 
-        # 3. 动画：模拟 3D 的灵动感
-        self.play(DrawBorderThenFill(robot))
-        self.play(robot.animate.scale(1.1).set_color(BLUE_B), run_time=1, rate_func=there_and_back)
+        # 头部
+        head = Circle(radius=0.7)
+        head.set_fill(color=color_main, opacity=1)
+        head.set_stroke(WHITE, width=4)
+        head.next_to(body, UP, buff=0.1)
+
+        # 眼睛：发光效果
+        eye_l = Circle(radius=0.12, color=WHITE, fill_opacity=1).move_to(head.get_center() + LEFT*0.25 + UP*0.1)
+        eye_r = Circle(radius=0.12, color=WHITE, fill_opacity=1).move_to(head.get_center() + RIGHT*0.25 + UP*0.1)
         
-        # 说话时的微动（呼吸感）
+        # 装饰细节：胸前的按钮
+        btn1 = Dot(radius=0.1, color=PINK).move_to(body.get_center() + UP*0.4 + LEFT*0.3)
+        btn2 = Dot(radius=0.1, color=YELLOW).move_to(body.get_center() + UP*0.4 + RIGHT*0.3)
+
+        # --- 4. 阴影处理 ---
+        # 为整个机器人创建阴影：复制一份并向右下方偏移
+        robot_group = VGroup(body, head, eye_l, eye_r, btn1, btn2)
+        shadow = robot_group.copy()
+        shadow.set_fill(color_shadow, opacity=0.3)
+        shadow.set_stroke(color_shadow, width=0)
+        shadow.shift(RIGHT*0.15 + DOWN*0.15)
+        
+        # 确保阴影在机器人底层
+        final_robot = VGroup(shadow, robot_group).center()
+
+        # --- 5. 动画效果 ---
+        # 底部背景：让画面不那么单调
+        grid = NumberPlane(background_line_style={"stroke_opacity": 0.2})
+        self.add(grid)
+
+        # 机器人入场：带有弹性效果的缩放
+        self.play(FadeIn(shadow), DrawBorderThenFill(robot_group), run_time=1.5)
+        self.play(final_robot.animate.scale(1.2), rate_func=there_and_back, run_time=1)
+
+        # 说话时的动态：轻微左右晃动 + 眼睛闪烁
         self.play(
-            robot.animate.shift(UP*0.3),
-            tip.animate.set_color(YELLOW),
+            final_robot.animate.shift(UP*0.2),
+            eye_l.animate.scale(1.2),
+            eye_r.animate.scale(1.2),
             run_time=3,
             rate_func=wiggle
         )
