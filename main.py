@@ -20,10 +20,9 @@ class Scene3D(ThreeDScene):
         audio_duration = 7 
 
         # --- 2. 3D 建模 (坐标精调版) ---
-        # 设置初始相机视角
         self.set_camera_orientation(phi=75 * DEGREES, theta=-45 * DEGREES)
         
-        # 身体：放在中心，底部接触地面
+        # 身体：中心在 UP*0.6，高度1.2
         body = Cylinder(radius=0.4, height=1.2, color="#0EA5E9").shift(UP * 0.6)
         
         # 头部：精准落在身体上方
@@ -33,11 +32,11 @@ class Scene3D(ThreeDScene):
         eye_l = Sphere(radius=0.08, color=WHITE).shift(UP * 1.75 + RIGHT * 0.18 + OUT * 0.4)
         eye_r = Sphere(radius=0.08, color=WHITE).shift(UP * 1.75 + LEFT * 0.18 + OUT * 0.4)
         
-        # 手臂：放在身体两侧中间高度
+        # 手臂：放在身体两侧
         arm_l = Cylinder(radius=0.08, height=0.7, color="#F472B6").rotate(90*DEGREES).shift(UP * 0.8 + LEFT * 0.65)
         arm_r = Cylinder(radius=0.08, height=0.7, color="#F472B6").rotate(90*DEGREES).shift(UP * 0.8 + RIGHT * 0.65)
         
-        # 腿部：在身体下方对称
+        # 腿部：在身体下方
         leg_l = Cylinder(radius=0.1, height=0.6, color="#0EA5E9").shift(DOWN * 0.1 + LEFT * 0.2)
         leg_r = Cylinder(radius=0.1, height=0.6, color="#0EA5E9").shift(DOWN * 0.1 + RIGHT * 0.2)
         
@@ -45,25 +44,21 @@ class Scene3D(ThreeDScene):
         character = VGroup(head, body, eye_l, eye_r, arm_l, arm_r, leg_l, leg_r)
 
         # --- 3. 渲染动画 ---
-        grid = NumberPlane(colors={"axis": WHITE, "grid": BLUE_E})
+        # 修正：移除引起报错的 colors 参数，使用默认网格或基础颜色
+        grid = NumberPlane().set_color(BLUE_E) 
         self.add(grid)
         
-        # 入场：整体从地面升起
+        # 入场
         self.play(FadeIn(character, shift=UP), run_time=1.5)
         self.wait(0.5)
 
-        # 核心动画：边说话边旋转相机 + 手臂微摆
-        self.begin_ambient_camera_rotation(rate=0.3) # 开启自动相机旋转
-        
+        # 核心动画
+        self.begin_ambient_camera_rotation(rate=0.3)
         self.play(
-            # 小人做一个轻微的上下漂浮动作（呼吸感）
             character.animate.shift(UP * 0.2),
-            # 右手臂向上挥动
             arm_r.animate.rotate(45*DEGREES, about_point=arm_r.get_start()),
             run_time=audio_duration / 2,
             rate_func=there_and_back
         )
-        
         self.stop_ambient_camera_rotation()
-        self.set_camera_orientation(phi=75 * DEGREES, theta=-45 * DEGREES) # 回到初始视角
         self.wait(1)
